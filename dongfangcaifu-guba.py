@@ -24,42 +24,57 @@ def download_page(url, para=None):
 def eastmoney(code: str, type: str):  # 两个参数分别表示开始读取与结束读取的页码
 
     import csv
-    from crawlab import save_item
+    #from crawlab import save_item
     csv_file = open(f"/data/comments_data_{code}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.csv", 'a+',
                     newline='', encoding='utf-8-sig')  # 解决中文乱码问题。a+表示向csv文件追加
     writer = csv.writer(csv_file)
     writer.writerow(['date', 'source', 'url', 'title', 'text', 'code', ])
     # 遍历每一个URL
     total = 0
-    domainurl = "https://search-api-web.eastmoney.com/search/jsonp?cb=jQuery35107761762966427765_1687662386467"
+    domainurl = "https://search-api-web.eastmoney.com/search/jsonp?cb=jQuery35105294012767640908_1688115358596"
     pageIndex = 1
     pageSize = 10
     flag = True
     while flag:
-        param = {"uid": "4529014368817886", "keyword": code, "type": ["cmsArticleWebOld"], "client": "web",
-                 "clientType": "web", "clientVersion": "curr", "param": {
-                "cmsArticleWebOld": {"searchScope": "default", "sort":"time", "pageIndex": pageIndex,
-                                     "pageSize": pageSize,
-                                     "preTag": "<em>", "postTag": "</em>"}}}
+
+        param={
+                "uid": "4529014368817886",
+                "keyword": code,
+                "type": [
+                    "gubaArticleWeb"
+                ],
+                "client": "web",
+                "clientVersion": "curr",
+                "clientType": "web",
+                "param": {
+                    "gubaArticleWeb": {
+                        "pageSize": pageSize,
+                        "pageIndex": pageIndex,
+                        "postTag": "",
+                        "preTag": "",
+                        "sortOrder": 2
+                    }
+                }
+            }
         url = f"{domainurl}&param={urllib.parse.quote(json.dumps(param))}"
 
         print(f"url:{url}")  # 用于检查
         crawUrl = f"{normalUrl}{urllib.parse.quote(url)}"
-        response = requests.get(crawUrl, verify=False, timeout=30)  # 禁止重定向
+        response = requests.get(url, verify=False, timeout=30)  # 禁止重定向
         print(response.text)
-        content = re.findall('jQuery35107761762966427765_1687662386467\((.*)\)', response.text)[0]
+        content = re.findall('jQuery35105294012767640908_1688115358596\((.*)\)', response.text)[0]
         print(content)
         # 读取的是json文件。因此就用json打开啦
         result = json.loads(content)
         # 找到原始页面中数据所在地
         if result['code'] == 0:
-            data = result['result']['cmsArticleWebOld']
+            data = result['result']['gubaArticleWeb']
             print(f"获取第{pageIndex}页的数据，大小为{len(data)}")
 
             for i in range(0, len(data)):
 
                 try:
-                    date = data[i]['date']
+                    date = data[i]['createTime']
                     if type == "1":
                         s_time = datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S').date()
                         now_time = datetime.datetime.now().date()
@@ -73,7 +88,7 @@ def eastmoney(code: str, type: str):  # 两个参数分别表示开始读取与�
                     # 数据处理
                     print(f"获取第{total}条数据的url内容：{url}")
                     text = get_text(data[i]['url'])
-                    source = data[i]['mediaName']
+                    source = "东方财富旗下股吧"
                     url = data[i]['url']
                     title = data[i]['title']
                     # 写入csv文件
@@ -83,7 +98,7 @@ def eastmoney(code: str, type: str):  # 两个参数分别表示开始读取与�
                     result_item2 = {'date': date, 'source': source, 'url': url,
                                     'title': title, 'text': text, 'code': code,
                                     'createTime': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-                    save_item(result_item2)
+                    #save_item(result_item2)
                     # 写入矢量数据库
                     # TODO:://
                     print(f"第{total}条数据处理完成")
@@ -102,7 +117,7 @@ def eastmoney(code: str, type: str):  # 两个参数分别表示开始读取与�
 
 def get_text(url):
     soup = BeautifulSoup(download_page(url))
-    pattern = re.compile("txtinfos")  # 按标签寻找
+    pattern = re.compile("xeditor_content")  # 按标签寻找
     all_comments = soup.find_all("div", {'class': pattern})
     if all_comments and len(all_comments) > 0:
         text1 = all_comments[0]
