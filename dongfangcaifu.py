@@ -66,7 +66,7 @@ def eastmoney(code: str, pageIndex: int, pageSize: int, endPageIndex: int):  # �
                     save_item(result_item2)
                     #写入矢量数据库
                     #TODO:://
-                    print(f"第{total}条数据异常处理完成")
+                    print(f"第{total}条数据处理完成")
                 except Exception as e:
                     print(
                         f"获取第【{pageIndex}】页的第【{i}】条数据,title:{data[i]['title']},url:{data[i]['url']}时异常，异常信息：{e}")
