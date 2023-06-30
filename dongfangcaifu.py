@@ -38,7 +38,7 @@ def eastmoney(code: str, type: str):  # 两个参数分别表示开始读取与�
     while flag:
         param = {"uid": "4529014368817886", "keyword": code, "type": ["cmsArticleWebOld"], "client": "web",
                  "clientType": "web", "clientVersion": "curr", "param": {
-                "cmsArticleWebOld": {"searchScope": "default", "sort": "default", "pageIndex": pageIndex,
+                "cmsArticleWebOld": {"searchScope": "default", "sort":"time", "pageIndex": pageIndex,
                                      "pageSize": pageSize,
                                      "preTag": "<em>", "postTag": "</em>"}}}
         url = f"{domainurl}&param={urllib.parse.quote(json.dumps(param))}"
@@ -59,8 +59,16 @@ def eastmoney(code: str, type: str):  # 两个参数分别表示开始读取与�
             for i in range(0, len(data)):
 
                 try:
-                    print(f"开始处理第{total}条数据：{data[i]}")
+                    if type == "1":
+                        s_time = datetime.datetime.strptime(data[i]['date'], '%Y-%m-%d %H:%M:%S').date()
+                        now_time = datetime.datetime.now().date()
+                        if s_time < now_time:
+                            print(f"当天数据已经处理完成，跳出循环")
+                            flag = False
+                            break
+
                     total += 1
+                    print(f"开始处理第{total}条数据：{data[i]}")
                     # 数据处理
                     print(f"获取第{total}条数据的url内容：{url}")
                     text = get_text(data[i]['url'])
@@ -77,13 +85,7 @@ def eastmoney(code: str, type: str):  # 两个参数分别表示开始读取与�
                     # TODO:://
                     print(f"第{total}条数据处理完成")
 
-                    if type == 1:
-                        s_time = datetime.datetime.strptime(data[i]['date'], '%Y-%m-%d %H:%M:%S').date()
-                        now_time = datetime.datetime.now().date()
-                        if s_time < now_time:
-                            print(f"当天数据已经处理完成，跳出循环")
-                            flag = False
-                            break
+
                 except Exception as e:
                     print(
                         f"获取第【{pageIndex}】页的第【{i}】条数据,title:{data[i]['title']},url:{data[i]['url']}时异常，异常信息：{e}")
@@ -112,7 +114,7 @@ if __name__ == "__main__":
     # Start = input('请输入起始页：')
     # size = input('请输入每页大小：')
     # End = input('请输入结束页：')
-    code = sys.argv[1]  # 股票代码
-    type = sys.argv[2]  # 增量1，全量2
-    eastmoney(code, type)
+    #code = sys.argv[1]  # 股票代码
+    #type = sys.argv[2]  # 增量1，全量2
+    eastmoney("002624", "1")
     # output_csv(result)
