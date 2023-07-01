@@ -1,8 +1,3 @@
-import datetime
-import json
-import time
-import urllib
-
 import requests
 
 if __name__ == '__main__':
@@ -11,4 +6,3 @@ if __name__ == '__main__':
     print(url2)  # 用于检查
     response = requests.get(url2, verify=False, timeout=30)  # 禁止重定向
     print(response.text)
-    
