@@ -3,7 +3,7 @@ import json
 import re
 import sys
 import urllib.parse
-
+from typing import Dict, List, Union
 import requests
 from bs4 import BeautifulSoup
 
@@ -24,11 +24,11 @@ def download_page(url, para=None):
 def eastmoney(code: str, type: str):  # 两个参数分别表示开始读取与结束读取的页码
 
     import csv
-    from crawlab import save_item
+    #from crawlab import save_item
     csv_file = open(f"/data/comments_data_{code}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.csv", 'a+',
                     newline='', encoding='utf-8-sig')  # 解决中文乱码问题。a+表示向csv文件追加
     writer = csv.writer(csv_file)
-    writer.writerow(['date', 'source', 'url', 'title', 'text', 'code', ])
+    writer.writerow(['date', 'source', 'link', 'title', 'text', 'code', 'createTime',])
     # 遍历每一个URL
     total = 0
     domainurl = "https://search-api-web.eastmoney.com/search/jsonp?cb=jQuery35107761762966427765_1687662386467"
@@ -41,10 +41,10 @@ def eastmoney(code: str, type: str):  # 两个参数分别表示开始读取与�
                 "cmsArticleWebOld": {"searchScope": "default", "sort":"time", "pageIndex": pageIndex,
                                      "pageSize": pageSize,
                                      "preTag": "<em>", "postTag": "</em>"}}}
-        url = f"{domainurl}&param={urllib.parse.quote(json.dumps(param))}"
+        link = f"{domainurl}&param={urllib.parse.quote(json.dumps(param))}"
 
-        print(f"url:{url}")  # 用于检查
-        crawUrl = f"{normalUrl}{urllib.parse.quote(url)}"
+        print(f"link:{link}")  # 用于检查
+        crawUrl = f"{normalUrl}{urllib.parse.quote(link)}"
         response = requests.get(crawUrl, verify=False, timeout=30)  # 禁止重定向
         print(response.text)
         content = re.findall('jQuery35107761762966427765_1687662386467\((.*)\)', response.text)[0]
@@ -71,23 +71,24 @@ def eastmoney(code: str, type: str):  # 两个参数分别表示开始读取与�
                     total += 1
                     print(f"开始处理第{total}条数据：{data[i]}")
                     # 数据处理
-                    print(f"获取第{total}条数据的url内容：{url}")
+                    print(f"获取第{total}条数据的link内容：{link}")
                     text = get_text(data[i]['url'])
                     source = data[i]['mediaName']
                     url = data[i]['url']
                     title = data[i]['title']
+                    createTime=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     # 写入csv文件
-                    result_item1 = [date, source, url, title, text, code]
+                    result_item1 = [date, source, link, title, text, code,createTime]
                     writer.writerow(result_item1)  # 原来的链接不全因此给他补齐
                     # 写入mongodb数据库
-                    result_item2 = {'date': date, 'source': source, 'url': url,
+                    result_item2 = {'date': date, 'source': source, 'link': link,
                                     'title': title, 'text': text, 'code': code,
-                                    'createTime': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-                    save_item(result_item2)
+                                    'createTime': createTime}
+                    #save_item(result_item2)
                     # 写入矢量数据库
                     # TODO:://
-                    print(f"第{total}条数据处理完成")
 
+                    print(f"第{total}条数据处理完成")
 
                 except Exception as e:
                     print(
