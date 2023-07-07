@@ -1,6 +1,7 @@
 import datetime
 import json
 import re
+import sys
 import urllib.parse
 import requests
 from bs4 import BeautifulSoup
@@ -112,7 +113,7 @@ if __name__ == "__main__":
     # Start = input('请输入起始页：')
     # size = input('请输入每页大小：')
     # End = input('请输入结束页：')
-    #code = sys.argv[1]  # 股票代码
-    #type = sys.argv[2]  # 增量1，全量2
-    eastmoney("002624", "1")
+    code = sys.argv[1]  # 股票代码
+    type = sys.argv[2]  # 增量1，全量2
+    eastmoney(code, type)
     # output_csv(result)
