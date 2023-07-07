@@ -1,11 +1,12 @@
 import datetime
 import json
 import re
-import sys
 import urllib.parse
-from typing import Dict, List, Union
 import requests
 from bs4 import BeautifulSoup
+from langchain.docstore.document import Document
+
+from storage import store
 
 normalUrl = "https://api.crawlbase.com/?token=gRg5wZGhA4tZby6Ihq_6IQ&url="
 def download_page(url, para=None):
@@ -51,7 +52,7 @@ def eastmoney(code: str, type: str):  # 两个参数分别表示开始读取与�
         if result['code'] == 0:
             data = result['result']['cmsArticleWebOld']
             print(f"获取第{pageIndex}页的数据，大小为{len(data)}")
-            storageList:list = []
+            storageList:list[Document] = []
             for i in range(0, len(data)):
 
                 try:
@@ -69,13 +70,14 @@ def eastmoney(code: str, type: str):  # 两个参数分别表示开始读取与�
                     # 数据处理
                     print(f"获取第{total}条数据的link内容：{link}")
                     text = get_text(data[i]['url'])
-                    source = data[i]['mediaName']
-                    link = data[i]['url']
+                    source = data[i]['url']
                     title = data[i]['title']
-                    createTime=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     # 写入
-                    result_item1 = [date, source, link, title, text, code,createTime]
-                    storageList.append(result_item1)
+                    doc = Document(page_content=text,
+                                   metadata={"source": source,
+                                             "date": date,
+                                             "title": title})
+                    storageList.append(doc)
 
                     print(f"第{total}条数据处理完成")
 
@@ -84,7 +86,7 @@ def eastmoney(code: str, type: str):  # 两个参数分别表示开始读取与�
                         f"获取第【{pageIndex}】页的第【{i}】条数据,title:{data[i]['title']},url:{data[i]['url']}时异常，异常信息：{e}")
             #存入矢量库
             if len(storageList)>0:
-                pass
+                store(storageList)
 
         if len(data) < pageSize:
             break
