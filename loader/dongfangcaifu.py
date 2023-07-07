@@ -3,10 +3,13 @@ import json
 import re
 import sys
 import urllib.parse
+
 import requests
 from bs4 import BeautifulSoup
 
 normalUrl = "https://api.crawlbase.com/?token=gRg5wZGhA4tZby6Ihq_6IQ&url="
+
+
 def download_page(url, para=None):
     crawUrl = f"{normalUrl}{urllib.parse.quote(url)}"
     if para:
@@ -20,9 +23,9 @@ def download_page(url, para=None):
         print("failed to download the page")
 
 
-def eastmoney(code: str, type: str,startPage=1):  # 两个参数分别表示开始读取与结束读取的页码
+def eastmoney(code: str, type: str, startPage=1):  # 两个参数分别表示开始读取与结束读取的页码
 
-    headers = ['date', 'source', 'link', 'title', 'text', 'code', 'createTime',]
+    headers = ['date', 'source', 'link', 'title', 'text', 'code', 'createTime', ]
     # 遍历每一个URL
     total = 0
     domainurl = "https://search-api-web.eastmoney.com/search/jsonp?cb=jQuery35107761762966427765_1687662386467"
@@ -34,7 +37,7 @@ def eastmoney(code: str, type: str,startPage=1):  # 两个参数分别表示开�
         print(f"开始获取第{pageIndex}页数据")
         param = {"uid": "4529014368817886", "keyword": code, "type": ["cmsArticleWebOld"], "client": "web",
                  "clientType": "web", "clientVersion": "curr", "param": {
-                "cmsArticleWebOld": {"searchScope": "default", "sort":"time", "pageIndex": pageIndex,
+                "cmsArticleWebOld": {"searchScope": "default", "sort": "time", "pageIndex": pageIndex,
                                      "pageSize": pageSize,
                                      "preTag": "<em>", "postTag": "</em>"}}}
         link = f"{domainurl}&param={urllib.parse.quote(json.dumps(param))}"
@@ -51,7 +54,7 @@ def eastmoney(code: str, type: str,startPage=1):  # 两个参数分别表示开�
         if result['code'] == 0:
             data = result['result']['cmsArticleWebOld']
             print(f"获取第{pageIndex}页的数据，大小为{len(data)}")
-            storageList:list[Document] = []
+            storageList: list[Document] = []
             for i in range(0, len(data)):
 
                 try:
@@ -89,10 +92,9 @@ def eastmoney(code: str, type: str,startPage=1):  # 两个参数分别表示开�
                     print(f"第{total}条数据处理完成")
 
                 except Exception as e:
-                    print(
-                        f"获取第【{pageIndex}】页的第【{i}】条数据,title:{data[i]['title']},url:{data[i]['url']}时异常，异常信息：{e}")
-            #存入矢量库
-            if len(storageList)>0:
+                    print(f"获取第【{pageIndex}】页的第【{i}】条数据,title:{data[i]['title']},url:{data[i]['url']}时异常，异常信息：{e}")
+            # 存入矢量库
+            if len(storageList) > 0:
                 store(storageList)
 
         print(f"第{pageIndex}页数据处理完成")
@@ -115,15 +117,13 @@ def get_text(url):
     return con
 
 
-
-
-from typing import List, Optional
+from typing import List
 
 import torch
 from langchain.docstore.document import Document
-from langchain.embeddings import OpenAIEmbeddings, HuggingFaceEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import Milvus
-from langchain.text_splitter import TextSplitter, CharacterTextSplitter
+from langchain.text_splitter import CharacterTextSplitter
 
 embedding_model_dict = {
     "ernie-tiny": "nghuyong/ernie-3.0-nano-zh",
@@ -135,18 +135,21 @@ embedding_model_dict = {
 }
 EMBEDDING_MODEL = "text2vec"
 EMBEDDING_DEVICE = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+
+
 def load() -> List[Document]:
-    docs=[]
-    content="近日，网传今年2月份抢教授话筒的蒋同学高考655分，被哈工大录取。对此，7月6日，哈尔滨工业大学招生办工作人员回应称，录取还没开始，各省尚未投档，投档结束了才知道，录取时间可能在20日左右。"
-    source="https://mbd.baidu.com/newspage/data/landingsuper?context=%7B%22nid%22%3A%22news_9605400130597382296%22%7D&n_type=-1&p_from=-1"
+    docs = []
+    content = "近日，网传今年2月份抢教授话筒的蒋同学高考655分，被哈工大录取。对此，7月6日，哈尔滨工业大学招生办工作人员回应称，录取还没开始，各省尚未投档，投档结束了才知道，录取时间可能在20日左右。"
+    source = "https://mbd.baidu.com/newspage/data/landingsuper?context=%7B%22nid%22%3A%22news_9605400130597382296%22%7D&n_type=-1&p_from=-1"
     doc = Document(page_content=content,
                    metadata={"source": source,
-                             "date":"2022-09-10 12:20:20",
-                             "title":"高考"})
+                             "date": "2022-09-10 12:20:20",
+                             "title": "高考"})
     docs.append(doc)
     return docs
 
-def load_and_split(docs:list[Document]) -> list[Document]:
+
+def load_and_split(docs: list[Document]) -> list[Document]:
     """Load documents and split into chunks."""
     _text_splitter = CharacterTextSplitter(
         separator="  ",
@@ -156,18 +159,19 @@ def load_and_split(docs:list[Document]) -> list[Document]:
     )
     return _text_splitter.split_documents(docs)
 
-def store(docs:list[Document]):
+
+def store(docs: list[Document]):
     docs = load_and_split(docs)
     embeddings = HuggingFaceEmbeddings(model_name=embedding_model_dict[EMBEDDING_MODEL],
-                                                model_kwargs={'device': EMBEDDING_DEVICE})
+                                       model_kwargs={'device': EMBEDDING_DEVICE})
     vector_db = Milvus.from_documents(
         docs,
         embeddings,
         connection_args={"host": "8.217.52.63", "port": "19530"},
     )
     docs = vector_db.similarity_search("蒋同学高考")
-    if docs and len(docs)>0:
-        content =[doc.page_content for doc in docs]
+    if docs and len(docs) > 0:
+        content = [doc.page_content for doc in docs]
         print(content)
     print("over")
 
@@ -179,6 +183,6 @@ if __name__ == "__main__":
     # End = input('请输入结束页：')
     code = sys.argv[1]  # 股票代码
     type = sys.argv[2]  # 增量1，全量2
-    startPage =sys.argv[3] #从第几页
-    eastmoney(code, type,int(startPage))
+    startPage = sys.argv[3]  # 从第几页
+    eastmoney(code, type, int(startPage))
     # output_csv(result)
