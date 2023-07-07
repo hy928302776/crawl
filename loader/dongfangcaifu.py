@@ -20,17 +20,18 @@ def download_page(url, para=None):
         print("failed to download the page")
 
 
-def eastmoney(code: str, type: str):  # 两个参数分别表示开始读取与结束读取的页码
+def eastmoney(code: str, type: str,startPage=1):  # 两个参数分别表示开始读取与结束读取的页码
 
     headers = ['date', 'source', 'link', 'title', 'text', 'code', 'createTime',]
     # 遍历每一个URL
     total = 0
     domainurl = "https://search-api-web.eastmoney.com/search/jsonp?cb=jQuery35107761762966427765_1687662386467"
-    pageIndex = 1
+    pageIndex = startPage
     pageSize = 10
     flag = True
 
     while flag:
+        print(f"开始获取第{pageIndex}页数据")
         param = {"uid": "4529014368817886", "keyword": code, "type": ["cmsArticleWebOld"], "client": "web",
                  "clientType": "web", "clientVersion": "curr", "param": {
                 "cmsArticleWebOld": {"searchScope": "default", "sort":"time", "pageIndex": pageIndex,
@@ -81,6 +82,7 @@ def eastmoney(code: str, type: str):  # 两个参数分别表示开始读取与�
                                              "url": url,
                                              "date": date,
                                              "type": "资讯",
+                                             "from": "eastmoney.com",
                                              "title": title})
                     storageList.append(doc)
 
@@ -93,11 +95,12 @@ def eastmoney(code: str, type: str):  # 两个参数分别表示开始读取与�
             if len(storageList)>0:
                 store(storageList)
 
+        print(f"第{pageIndex}页数据处理完成")
         if len(data) < pageSize:
             break
         pageIndex += 1
 
-    print(f"处理完成，一共处理{total}条数据")
+    print(f"处理完成，从{startPage}-{pageIndex}页，一共处理{total}条数据")
 
 
 def get_text(url):
@@ -176,5 +179,6 @@ if __name__ == "__main__":
     # End = input('请输入结束页：')
     code = sys.argv[1]  # 股票代码
     type = sys.argv[2]  # 增量1，全量2
-    eastmoney(code, type)
+    startPage =sys.argv[3] #从第几页
+    eastmoney(code, type,int(startPage))
     # output_csv(result)
