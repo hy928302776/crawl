@@ -7,7 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 from langchain.docstore.document import Document
 
-from storage import store
+from storage.store import store
 
 normalUrl = "https://api.crawlbase.com/?token=gRg5wZGhA4tZby6Ihq_6IQ&url="
 def download_page(url, para=None):
