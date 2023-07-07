@@ -74,7 +74,7 @@ def eastmoney(code: str, type: str, startPage=1):  # 两个参数分别表示开
                     text = get_text(data[i]['url'])
                     url = data[i]['url']
                     title = data[i]['title']
-                    createTime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    source = "search-api-web.eastmoney.com"
                     if text:
                         text = text.replace('</em>', '').replace('<em>', '')
                     if title:
@@ -82,12 +82,10 @@ def eastmoney(code: str, type: str, startPage=1):  # 两个参数分别表示开
                     # 写入
                     doc = Document(page_content=text,
                                    metadata={"source": "Web",
-                                             "code": code,
                                              "url": url,
                                              "date": date,
                                              "type": "资讯",
                                              "from": "eastmoney.com",
-                                             "createTime": createTime,
                                              "title": title})
                     storageList.append(doc)
 
@@ -162,20 +160,6 @@ def load_and_split(docs: list[Document]) -> list[Document]:
     return _text_splitter.split_documents(docs)
 
 
-def store(docs: list[Document]):
-    docs = load_and_split(docs)
-    embeddings = HuggingFaceEmbeddings(model_name=embedding_model_dict[EMBEDDING_MODEL],
-                                       model_kwargs={'device': EMBEDDING_DEVICE})
-    vector_db = Milvus.from_documents(
-        docs,
-        embeddings,
-        connection_args={"host": "8.217.52.63", "port": "19530"},
-    )
-    docs = vector_db.similarity_search("蒋同学高考")
-    if docs and len(docs) > 0:
-        content = [doc.page_content for doc in docs]
-        print(content)
-    print("over")
 
 
 if __name__ == "__main__":
